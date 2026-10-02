@@ -1,36 +1,36 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "../../../lib/supabase/server";
-import { safeNext } from "../../../lib/safe-next";
 
-// Target of Supabase verification links.
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const requestUrl = new URL(request.url);
 
-  const token_hash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
+  const tokenHash = requestUrl.searchParams.get("token_hash");
+  const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
 
-  const next = safeNext(
-    searchParams.get("next"),
-    "/login",
-  );
+  let next = requestUrl.searchParams.get("next") ?? "/login?verified=1";
 
-  if (token_hash && type) {
+  // Only allow internal redirects.
+  if (!next.startsWith("/") || next.startsWith("//")) {
+    next = "/login?verified=1";
+  }
+
+  const redirectTo = new URL(next, requestUrl.origin);
+
+  if (tokenHash && type) {
     const supabase = await createClient();
 
     const { error } = await supabase.auth.verifyOtp({
       type,
-      token_hash,
+      token_hash: tokenHash,
     });
 
     if (!error) {
-      return NextResponse.redirect(
-        new URL(next, request.url),
-      );
+      return NextResponse.redirect(redirectTo);
     }
   }
 
   return NextResponse.redirect(
-    new URL("/login?error=confirm", request.url),
+    new URL("/login?error=confirmation", requestUrl.origin),
   );
 }

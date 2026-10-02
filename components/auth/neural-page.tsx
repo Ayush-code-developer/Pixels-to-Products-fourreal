@@ -8,6 +8,7 @@ import {
   type FormEvent,
   type MouseEvent,
 } from "react";
+
 import { createClient } from "../../lib/supabase/client";
 
 type Mode = "login" | "register" | "recovery";
@@ -41,7 +42,7 @@ export default function NeuralAccess() {
       setMode("recovery");
       setRecoveryReady(true);
       setMessage(
-        "PASSWORD RESET AUTHORIZED — ENTER YOUR NEW PASSWORD"
+        "PASSWORD RESET AUTHORIZED — ENTER YOUR NEW PASSWORD",
       );
     }
 
@@ -49,8 +50,12 @@ export default function NeuralAccess() {
       setMessage("EMAIL VERIFIED — YOU CAN NOW SIGN IN");
     }
 
-    if (params.get("error")) {
+    if (params.get("error") === "callback") {
       setError("AUTHENTICATION CALLBACK FAILED");
+    }
+
+    if (params.get("error") === "confirmation") {
+      setError("EMAIL CONFIRMATION FAILED");
     }
   }, []);
 
@@ -67,7 +72,9 @@ export default function NeuralAccess() {
     setConfirmation("");
   };
 
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (
+    event: MouseEvent<HTMLDivElement>,
+  ) => {
     const x = event.clientX / window.innerWidth;
     const y = event.clientY / window.innerHeight;
 
@@ -81,11 +88,14 @@ export default function NeuralAccess() {
     });
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     clearStatus();
 
-    const settingNewPassword = mode === "recovery" && recoveryReady;
+    const settingNewPassword =
+      mode === "recovery" && recoveryReady;
 
     if (!settingNewPassword && !email.trim()) {
       setError("EMAIL ADDRESS IS REQUIRED");
@@ -109,13 +119,17 @@ export default function NeuralAccess() {
 
     try {
       if (mode === "recovery") {
-        const { error: resetError } = await supabase.auth.updateUser({
-          password,
-        });
+        const { error: resetError } =
+          await supabase.auth.updateUser({
+            password,
+          });
 
         if (resetError) {
           throw resetError;
         }
+
+        setPassword("");
+        setConfirmation("");
 
         window.location.assign("/studio");
         return;
@@ -130,7 +144,7 @@ export default function NeuralAccess() {
               emailRedirectTo: `${
                 window.location.origin
               }/auth/callback?next=${encodeURIComponent(
-                "/login?verified=1"
+                "/login?verified=1",
               )}`,
             },
           });
@@ -145,8 +159,9 @@ export default function NeuralAccess() {
         }
 
         setMessage(
-          "ACCOUNT CREATED — CHECK YOUR EMAIL TO VERIFY YOUR ACCOUNT"
+          "ACCOUNT CREATED — CHECK YOUR EMAIL TO VERIFY YOUR ACCOUNT",
         );
+
         return;
       }
 
@@ -165,7 +180,7 @@ export default function NeuralAccess() {
       setError(
         caught instanceof Error
           ? caught.message.toUpperCase()
-          : "AUTHENTICATION FAILED"
+          : "AUTHENTICATION FAILED",
       );
     } finally {
       setLoading(false);
@@ -190,9 +205,9 @@ export default function NeuralAccess() {
             redirectTo: `${
               window.location.origin
             }/auth/callback?next=${encodeURIComponent(
-              "/login?mode=recovery"
+              "/login?mode=recovery",
             )}`,
-          }
+          },
         );
 
       if (resetError) {
@@ -200,13 +215,13 @@ export default function NeuralAccess() {
       }
 
       setMessage(
-        "PASSWORD RESET EMAIL SENT — CHECK YOUR INBOX"
+        "PASSWORD RESET EMAIL SENT — CHECK YOUR INBOX",
       );
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message.toUpperCase()
-          : "PASSWORD RESET REQUEST FAILED"
+          : "PASSWORD RESET REQUEST FAILED",
       );
     } finally {
       setLoading(false);
@@ -655,7 +670,8 @@ export default function NeuralAccess() {
             </div>
           )}
 
-          {(isRegister || (isRecovery && recoveryReady)) && (
+          {(isRegister ||
+            (isRecovery && recoveryReady)) && (
             <div className="neural-form-group">
               <label
                 className="neural-label"
@@ -704,7 +720,9 @@ export default function NeuralAccess() {
                 className="neural-button"
                 disabled={loading}
               >
-                {loading ? "PLEASE WAIT..." : action}
+                {loading
+                  ? "PLEASE WAIT..."
+                  : action}
               </button>
             </div>
           )}
@@ -729,14 +747,18 @@ export default function NeuralAccess() {
             <>
               <button
                 type="button"
-                onClick={() => switchMode("recovery")}
+                onClick={() =>
+                  switchMode("recovery")
+                }
               >
                 FORGOT PASSWORD?
               </button>
 
               <button
                 type="button"
-                onClick={() => switchMode("register")}
+                onClick={() =>
+                  switchMode("register")
+                }
               >
                 CREATE ACCOUNT
               </button>
@@ -745,7 +767,9 @@ export default function NeuralAccess() {
             <>
               <button
                 type="button"
-                onClick={() => switchMode("login")}
+                onClick={() =>
+                  switchMode("login")
+                }
               >
                 BACK TO LOGIN
               </button>
@@ -753,14 +777,18 @@ export default function NeuralAccess() {
               {mode !== "register" ? (
                 <button
                   type="button"
-                  onClick={() => switchMode("register")}
+                  onClick={() =>
+                    switchMode("register")
+                  }
                 >
                   CREATE ACCOUNT
                 </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() => switchMode("recovery")}
+                  onClick={() =>
+                    switchMode("recovery")
+                  }
                 >
                   FORGOT PASSWORD?
                 </button>
